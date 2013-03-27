@@ -370,6 +370,7 @@ class DocBlock(object):
         self.tags = odict()
         self.comment = None
         self.params = odict()
+        self.lower_params = odict()
         self.position = None
 
     def __cmp__(self, other):
@@ -997,6 +998,7 @@ class AnnotationParser(object):
                     comment_block.tags[param_name] = tag
                 else:
                     comment_block.params[param_name] = tag
+                    comment_block.lower_params[param_name.lower()] = tag
                 current_param = tag
                 continue
 

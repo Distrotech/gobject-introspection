@@ -464,6 +464,8 @@ def scanner_main(args):
 
     transformer.namespace.shared_libraries = shlibs
 
+    transformer.fabricate_special_blocks(blocks)
+
     main = MainTransformer(transformer, blocks)
     main.transform()
 

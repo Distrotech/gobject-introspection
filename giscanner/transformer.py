@@ -135,6 +135,30 @@ class Transformer(object):
         self._namespace.includes.add(include)
         self._parse_include(include_path, uninstalled=True)
 
+    def _fabricate_section(self, block):
+        def get_tag(name):
+            tag = block.lower_params.get(name)
+            if tag:
+                return tag.comment
+            else:
+                return None
+
+        section = ast.Section(block.name,
+                              get_tag('short_description'),
+                              get_tag('long_description'),
+                              get_tag('see_also'),
+                              get_tag('title'),
+                              get_tag('stability'),
+                              get_tag('section_id'),
+                              get_tag('include'),
+                              get_tag('image'))
+        self._append_new_node(section)
+
+    def fabricate_special_blocks(self, blocks):
+        for name, block in blocks.iteritems():
+            if name.startswith("SECTION:"):
+                self._fabricate_section(block)
+
     def lookup_giname(self, name):
         """Given a name of the form Foo or Bar.Foo,
 return the corresponding ast.Node, or None if none
