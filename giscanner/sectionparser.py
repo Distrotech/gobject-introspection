@@ -19,6 +19,9 @@
 
 import re
 
+from . import ast
+from .utils import to_underscores
+
 class SectionsFile(object):
     def __init__(self, sections):
         self.sections = sections
@@ -83,5 +86,68 @@ def parse_sections_file(lines):
             continue
 
         current_subsection.symbols.append(line)
+
+    return SectionsFile(sections)
+
+def write_sections_file(sections_file):
+    lines = []
+    def write(line):
+        lines.append(line)
+
+    for section in sections_file.sections:
+        write("\n<SECTION>")
+        if section.file is not None:
+            write("<FILE>%s</FILE>" % (section.file, ))
+        if section.title is not None:
+            write("<TITLE>%s</TITLE>" % (section.title, ))
+        if section.includes is not None:
+            write("<INCLUDE>%s</INCLUDE>" % (section.includes, ))
+
+        is_first_subsection = True
+        for subsection in section.subsections:
+            if subsection.name is not None:
+                write("<SUBSECTION %s>" % (subsection.name, ))
+            elif not is_first_subsection:
+                write("\n<SUBSECTION>")
+
+            is_first_subsection = False
+
+            for symbol in subsection.symbols:
+                write(symbol)
+
+    return '\n' + '\n'.join(lines).strip() + '\n'
+
+def generate_sections_file(transformer):
+    ns = transformer.namespace
+
+    sections = []
+
+    def new_section(file_, title):
+        section = Section()
+        section.file = file_
+        section.title = title
+        section.subsections.append(Subsection(None))
+        sections.append(section)
+        return section
+
+    def append_symbol(section, sym):
+        section.subsections[0].symbols.append(sym)
+
+    general_section = new_section("main", "Main")
+
+    for node in ns.itervalues():
+        if isinstance(node, ast.Function):
+            append_symbol(general_section, node.symbol)
+        elif isinstance(node, (ast.Class, ast.Interface)):
+            gtype_name = node.gtype_name
+            file_name = to_underscores(gtype_name).replace('_', '-').lower()
+            section = new_section(file_name, gtype_name)
+            append_symbol(section, gtype_name)
+            append_symbol(section, node.glib_type_struct.target_giname.replace('.', ''))
+
+            for meth in node.methods:
+                append_symbol(section, meth.symbol)
+            for meth in node.static_methods:
+                append_symbol(section, meth.symbol)
 
     return SectionsFile(sections)

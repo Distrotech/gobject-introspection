@@ -22,6 +22,7 @@ import os
 import optparse
 
 from .docwriter import DocWriter
+from .sectionparser import generate_sections_file, write_sections_file
 from .transformer import Transformer
 
 def doc_main(args):
@@ -37,6 +38,9 @@ def doc_main(args):
     parser.add_option("", "--add-include-path",
                       action="append", dest="include_paths", default=[],
                       help="include paths for other GIR files")
+    parser.add_option("", "--write-sections-file",
+                      action="store_true", dest="write_sections",
+                      help="Write the loaded or generation sections file")
 
     options, args = parser.parse_args(args)
     if not options.output:
@@ -54,7 +58,14 @@ def doc_main(args):
     extra_include_dirs.extend(options.include_paths)
     transformer = Transformer.parse_from_gir(args[1], extra_include_dirs)
 
-    writer = DocWriter(transformer, options.language)
-    writer.write(options.output)
+    if options.write_sections:
+        sections_file = generate_sections_file(transformer)
+
+        fp = open(options.output, 'w')
+        fp.write(write_sections_file(sections_file))
+        fp.close()
+    else:
+        writer = DocWriter(transformer, options.language)
+        writer.write(options.output)
 
     return 0
