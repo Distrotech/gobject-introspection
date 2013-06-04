@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Gobject-introspection by Distrotech</title>
+  </head>
+
+  <body>
+    <div id="container">
+      <div class="inner">
+
+        <header>
+          <h1>Gobject-introspection</h1>
+          <h2>Mirror of git://git.gnome.org/gobject-introspection</h2>
+        </header>
+
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/Distrotech/gobject-introspection/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/Distrotech/gobject-introspection/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/Distrotech/gobject-introspection" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+          <h1>
+<a name="gobject-introspection" class="anchor" href="#gobject-introspection"><span class="octicon octicon-link"></span></a>GObject Introspection</h1>
+
+<p>The goal of the project is to describe the APIs and  collect them in
+a uniform, machine readable format.</p>
+
+<h1>
+<a name="gir-xml-format" class="anchor" href="#gir-xml-format"><span class="octicon octicon-link"></span></a>GIR XML format</h1>
+
+<p>There's an XML format called GIR used by GObjectIntrospection.
+The purpose of it is to provide a common structure to access the complete
+available API that a library or other unit of code exports.
+It is meant to be language agnostic using namespaces to separate
+core, language or library specific functionality.
+There are currently only C based tools that work on the format, but it's
+meant to be usable to use in other situations, for instance to/from another
+set of languages.</p>
+
+<h1>
+<a name="typelib" class="anchor" href="#typelib"><span class="octicon octicon-link"></span></a>Typelib</h1>
+
+<p>The typelib is a to disk version of the GIR designed to be fast, memory
+efficient and complete enough so that language bindings can be written
+on top of it without other sources of information.
+It is normally compiled from a GIR when a library/program is installed and
+accessed from the language binding or another application who wishes to
+use the information.</p>
+
+<h1>
+<a name="tools" class="anchor" href="#tools"><span class="octicon octicon-link"></span></a>Tools</h1>
+
+<p>Three tools are shipped with GObject Introspection:</p>
+
+<ul>
+<li>g-ir-compile, a typelib compiler. It converts one or more GIR files
+into one or more typelib blobs. It can either emit the raw typelib
+blob or C code (--code).</li>
+<li>g-ir-generate, an GIR generator, using the repository API. It generates
+GIR files from binary typelib which can be in a shared object, or a raw
+typelib blob.</li>
+<li>g-ir-scanner, a tool which generates GIR XML files by parsing headers
+and introspecting GObject based libraries.</li>
+<li>g-ir-doc-tool, generates Mallard files that can be viewed with yelp or
+rendered to HTML with yelp-build from yelp-tools.</li>
+</ul><h1>
+<a name="api-library" class="anchor" href="#api-library"><span class="octicon octicon-link"></span></a>API library</h1>
+
+<p>There's also a C based library called libgirepository which provides
+an API to access to the typelib metadata. It also contains an API to
+invoke functions, given the function info object. The implementation is
+based on libffi (3.0 or higher of libffi required, can be found at
+<a href="http://sourceware.org/libffi">http://sourceware.org/libffi</a>).</p>
+
+<p>There are a number of GIR test files in tests/, and a script to do
+roundtrip tests (GIR -&gt; typelib -&gt; GIR).</p>
+
+<h1>
+<a name="helping-out" class="anchor" href="#helping-out"><span class="octicon octicon-link"></span></a>Helping out</h1>
+
+<p>The introspection framework needs a lot more work, see TODO.</p>
+
+<h1>
+<a name="homepage" class="anchor" href="#homepage"><span class="octicon octicon-link"></span></a>Homepage</h1>
+
+<p><a href="http://live.gnome.org/GObjectIntrospection">http://live.gnome.org/GObjectIntrospection</a></p>
+
+<h1>
+<a name="reporting-bugs" class="anchor" href="#reporting-bugs"><span class="octicon octicon-link"></span></a>Reporting bugs</h1>
+
+<p>Bugs should be reported in <a href="http://bugzilla.gnome.org/">http://bugzilla.gnome.org/</a>, the glib product and
+the introspection component.</p>
+
+<h1>
+<a name="contact" class="anchor" href="#contact"><span class="octicon octicon-link"></span></a>Contact</h1>
+
+<p>Mail: <a href="mailto:gtk-devel-list@gnome.org">gtk-devel-list@gnome.org</a>
+IRC: #<a href="mailto:introspection@irc.gnome.org">introspection@irc.gnome.org</a></p>
+        </section>
+
+        <footer>
+          Gobject-introspection is maintained by <a href="https://github.com/Distrotech">Distrotech</a><br>
+          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="http://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+        
+      </div>
+    </div>
+  </body>
+</html>
