@@ -1,0 +1,11 @@
+#!/bin/bash
+
+export PYTHONHOME=/build/${5}/usr
+export PYTHON=/build/${5}/usr/bin/python2.7
+export PYTHONPATH=/build/${5}/usr/${B_LIBDIRS}/gobject-introspection
+
+CWD=$( pwd )
+
+make ${MAKE_J} V=1 GLIB_LIBDIR=/build/${5}/usr/${B_LIBDIRS} || \
+  chroot /build/${5} make -C ${CWD} ${MAKE_J} || exit 1
+make DESTDIR=${3} GLIB_LIBDIR=/build/${5}/usr/${B_LIBDIRS} install
