@@ -135,7 +135,9 @@ build_triplet = @build@
 host_triplet = @host@
 check_PROGRAMS =
 bin_PROGRAMS = g-ir-compiler$(EXEEXT) g-ir-generate$(EXEEXT)
-noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) glib-print$(EXEEXT)
+noinst_PROGRAMS = $(am__EXEEXT_1) glib-print$(EXEEXT)
+EXTRA_PROGRAMS = cmph-bdz-test$(EXEEXT) gthash-test$(EXEEXT)
+TESTS = cmph-bdz-test$(EXEEXT) gthash-test$(EXEEXT)
 DIST_COMMON = $(srcdir)/common.mk $(srcdir)/Makefile.introspection \
 	$(srcdir)/Makefile-cmph.am $(srcdir)/Makefile-girepository.am \
 	$(srcdir)/Makefile-giscanner.am $(srcdir)/Makefile-examples.am \
@@ -150,10 +152,11 @@ DIST_COMMON = $(srcdir)/common.mk $(srcdir)/Makefile.introspection \
 	$(top_srcdir)/build-aux/ylwrap $(collections_PYTHON) \
 	$(pkgpyexec_PYTHON) $(top_srcdir)/build-aux/py-compile \
 	$(dist_make_DATA) $(nobase_dist_template_DATA) \
-	$(girepo_HEADERS) AUTHORS COPYING ChangeLog NEWS README TODO \
-	build-aux/compile build-aux/config.guess build-aux/config.sub \
-	build-aux/depcomp build-aux/install-sh build-aux/missing \
-	build-aux/py-compile build-aux/ylwrap build-aux/ltmain.sh \
+	$(girepo_HEADERS) $(top_srcdir)/build-aux/test-driver AUTHORS \
+	COPYING ChangeLog NEWS README TODO build-aux/compile \
+	build-aux/config.guess build-aux/config.sub build-aux/depcomp \
+	build-aux/install-sh build-aux/missing build-aux/py-compile \
+	build-aux/ylwrap build-aux/ltmain.sh \
 	$(top_srcdir)/build-aux/compile \
 	$(top_srcdir)/build-aux/config.guess \
 	$(top_srcdir)/build-aux/config.sub \
@@ -315,8 +318,7 @@ libgiscanner_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(libgiscanner_la_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-am__EXEEXT_1 = cmph-bdz-test$(EXEEXT) gthash-test$(EXEEXT)
-@OS_WIN32_FALSE@am__EXEEXT_2 = gi-dump-types$(EXEEXT)
+@OS_WIN32_FALSE@am__EXEEXT_1 = gi-dump-types$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
 am_cmph_bdz_test_OBJECTS = cmph_bdz_test-cmph-bdz-test.$(OBJEXT)
 cmph_bdz_test_OBJECTS = $(am_cmph_bdz_test_OBJECTS)
@@ -464,7 +466,7 @@ am__recursive_targets = \
   $(RECURSIVE_CLEAN_TARGETS) \
   $(am__extra_recursive_targets)
 AM_RECURSIVE_TARGETS = $(am__recursive_targets:-recursive=) TAGS CTAGS \
-	cscope distdir dist dist-all distcheck
+	cscope check recheck distdir dist dist-all distcheck
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) \
 	$(LISP)config.h.in
 # Read a list of newline-separated strings from the standard input,
@@ -486,6 +488,182 @@ am__define_uniq_tagged_files = \
 ETAGS = etags
 CTAGS = ctags
 CSCOPE = cscope
+am__tty_colors_dummy = \
+  mgn= red= grn= lgn= blu= brg= std=; \
+  am__color_tests=no
+am__tty_colors = { \
+  $(am__tty_colors_dummy); \
+  if test "X$(AM_COLOR_TESTS)" = Xno; then \
+    am__color_tests=no; \
+  elif test "X$(AM_COLOR_TESTS)" = Xalways; then \
+    am__color_tests=yes; \
+  elif test "X$$TERM" != Xdumb && { test -t 1; } 2>/dev/null; then \
+    am__color_tests=yes; \
+  fi; \
+  if test $$am__color_tests = yes; then \
+    red='[0;31m'; \
+    grn='[0;32m'; \
+    lgn='[1;32m'; \
+    blu='[1;34m'; \
+    mgn='[0;35m'; \
+    brg='[1m'; \
+    std='[m'; \
+  fi; \
+}
+am__recheck_rx = ^[ 	]*:recheck:[ 	]*
+am__global_test_result_rx = ^[ 	]*:global-test-result:[ 	]*
+am__copy_in_global_log_rx = ^[ 	]*:copy-in-global-log:[ 	]*
+# A command that, given a newline-separated list of test names on the
+# standard input, print the name of the tests that are to be re-run
+# upon "make recheck".
+am__list_recheck_tests = $(AWK) '{ \
+  recheck = 1; \
+  while ((rc = (getline line < ($$0 ".trs"))) != 0) \
+    { \
+      if (rc < 0) \
+        { \
+          if ((getline line2 < ($$0 ".log")) < 0) \
+	    recheck = 0; \
+          break; \
+        } \
+      else if (line ~ /$(am__recheck_rx)[nN][Oo]/) \
+        { \
+          recheck = 0; \
+          break; \
+        } \
+      else if (line ~ /$(am__recheck_rx)[yY][eE][sS]/) \
+        { \
+          break; \
+        } \
+    }; \
+  if (recheck) \
+    print $$0; \
+  close ($$0 ".trs"); \
+  close ($$0 ".log"); \
+}'
+# A command that, given a newline-separated list of test names on the
+# standard input, create the global log from their .trs and .log files.
+am__create_global_log = $(AWK) ' \
+function fatal(msg) \
+{ \
+  print "fatal: making $@: " msg | "cat >&2"; \
+  exit 1; \
+} \
+function rst_section(header) \
+{ \
+  print header; \
+  len = length(header); \
+  for (i = 1; i <= len; i = i + 1) \
+    printf "="; \
+  printf "\n\n"; \
+} \
+{ \
+  copy_in_global_log = 1; \
+  global_test_result = "RUN"; \
+  while ((rc = (getline line < ($$0 ".trs"))) != 0) \
+    { \
+      if (rc < 0) \
+         fatal("failed to read from " $$0 ".trs"); \
+      if (line ~ /$(am__global_test_result_rx)/) \
+        { \
+          sub("$(am__global_test_result_rx)", "", line); \
+          sub("[ 	]*$$", "", line); \
+          global_test_result = line; \
+        } \
+      else if (line ~ /$(am__copy_in_global_log_rx)[nN][oO]/) \
+        copy_in_global_log = 0; \
+    }; \
+  if (copy_in_global_log) \
+    { \
+      rst_section(global_test_result ": " $$0); \
+      while ((rc = (getline line < ($$0 ".log"))) != 0) \
+      { \
+        if (rc < 0) \
+          fatal("failed to read from " $$0 ".log"); \
+        print line; \
+      }; \
+      printf "\n"; \
+    }; \
+  close ($$0 ".trs"); \
+  close ($$0 ".log"); \
+}'
+# Restructured Text title.
+am__rst_title = { sed 's/.*/   &   /;h;s/./=/g;p;x;s/ *$$//;p;g' && echo; }
+# Solaris 10 'make', and several other traditional 'make' implementations,
+# pass "-e" to $(SHELL), and POSIX 2008 even requires this.  Work around it
+# by disabling -e (using the XSI extension "set +e") if it's set.
+am__sh_e_setup = case $$- in *e*) set +e;; esac
+# Default flags passed to test drivers.
+am__common_driver_flags = \
+  --color-tests "$$am__color_tests" \
+  --enable-hard-errors "$$am__enable_hard_errors" \
+  --expect-failure "$$am__expect_failure"
+# To be inserted before the command running the test.  Creates the
+# directory for the log if needed.  Stores in $dir the directory
+# containing $f, in $tst the test, in $log the log.  Executes the
+# developer- defined test setup AM_TESTS_ENVIRONMENT (if any), and
+# passes TESTS_ENVIRONMENT.  Set up options for the wrapper that
+# will run the test scripts (or their associated LOG_COMPILER, if
+# thy have one).
+am__check_pre = \
+$(am__sh_e_setup);					\
+$(am__vpath_adj_setup) $(am__vpath_adj)			\
+$(am__tty_colors);					\
+srcdir=$(srcdir); export srcdir;			\
+case "$@" in						\
+  */*) am__odir=`echo "./$@" | sed 's|/[^/]*$$||'`;;	\
+    *) am__odir=.;; 					\
+esac;							\
+test "x$$am__odir" = x"." || test -d "$$am__odir" 	\
+  || $(MKDIR_P) "$$am__odir" || exit $$?;		\
+if test -f "./$$f"; then dir=./;			\
+elif test -f "$$f"; then dir=;				\
+else dir="$(srcdir)/"; fi;				\
+tst=$$dir$$f; log='$@'; 				\
+if test -n '$(DISABLE_HARD_ERRORS)'; then		\
+  am__enable_hard_errors=no; 				\
+else							\
+  am__enable_hard_errors=yes; 				\
+fi; 							\
+case " $(XFAIL_TESTS) " in				\
+  *[\ \	]$$f[\ \	]* | *[\ \	]$$dir$$f[\ \	]*) \
+    am__expect_failure=yes;;				\
+  *)							\
+    am__expect_failure=no;;				\
+esac; 							\
+$(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT)
+# A shell command to get the names of the tests scripts with any registered
+# extension removed (i.e., equivalently, the names of the test logs, with
+# the '.log' extension removed).  The result is saved in the shell variable
+# '$bases'.  This honors runtime overriding of TESTS and TEST_LOGS.  Sadly,
+# we cannot use something simpler, involving e.g., "$(TEST_LOGS:.log=)",
+# since that might cause problem with VPATH rewrites for suffix-less tests.
+# See also 'test-harness-vpath-rewrite.sh' and 'test-trs-basic.sh'.
+am__set_TESTS_bases = \
+  bases='$(TEST_LOGS)'; \
+  bases=`for i in $$bases; do echo $$i; done | sed 's/\.log$$//'`; \
+  bases=`echo $$bases`
+RECHECK_LOGS = $(TEST_LOGS)
+TEST_SUITE_LOG = test-suite.log
+TEST_EXTENSIONS = @EXEEXT@ .test
+LOG_DRIVER = $(SHELL) $(top_srcdir)/build-aux/test-driver
+LOG_COMPILE = $(LOG_COMPILER) $(AM_LOG_FLAGS) $(LOG_FLAGS)
+am__set_b = \
+  case '$@' in \
+    */*) \
+      case '$*' in \
+        */*) b='$*';; \
+          *) b=`echo '$@' | sed 's/\.log$$//'`; \
+       esac;; \
+    *) \
+      b='$*';; \
+  esac
+am__test_logs1 = $(TESTS:=.log)
+am__test_logs2 = $(am__test_logs1:@EXEEXT@.log=.log)
+TEST_LOGS = $(am__test_logs2:.test.log=.log)
+TEST_LOG_DRIVER = $(SHELL) $(top_srcdir)/build-aux/test-driver
+TEST_LOG_COMPILE = $(TEST_LOG_COMPILER) $(AM_TEST_LOG_FLAGS) \
+	$(TEST_LOG_FLAGS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -577,6 +755,7 @@ GIREPO_CFLAGS = @GIREPO_CFLAGS@
 GIREPO_LIBS = @GIREPO_LIBS@
 GIR_DIR = @GIR_DIR@
 GIR_SUFFIX = @GIR_SUFFIX@
+GI_VERSION = @GI_VERSION@
 GLIBSRC = @GLIBSRC@
 GLIB_CFLAGS = @GLIB_CFLAGS@
 GLIB_LIBS = @GLIB_LIBS@
@@ -706,25 +885,26 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 man_MANS = docs/g-ir-compiler.1 docs/g-ir-generate.1 \
 	docs/g-ir-scanner.1
-EXTRA_DIST = $(STATIC_GIRSOURCES) gir/cairo-1.0.gir.in gir/glib-2.0.c \
-	gir/gmodule-2.0.c gir/gobject-2.0.c gir/gio-2.0.c \
-	tools/g-ir-scanner.in tools/g-ir-annotation-tool.in \
-	tools/g-ir-doc-tool.in ./girepository/girepository.symbols \
-	$(GENERATED_MSVC_FILES) COPYING.LGPL COPYING.GPL CONTRIBUTORS \
-	$(pkgconfig_DATA) $(man_MANS) $(m4_DATA) misc/pep8.py \
-	misc/pyflakes.py
+EXTRA_DIST = girepository/docs.c $(STATIC_GIRSOURCES) \
+	gir/cairo-1.0.gir.in gir/glib-2.0.c gir/gmodule-2.0.c \
+	gir/gobject-2.0.c gir/gio-2.0.c tools/g-ir-scanner.in \
+	tools/g-ir-annotation-tool.in tools/g-ir-doc-tool.in \
+	./girepository/girepository.symbols $(GENERATED_MSVC_FILES) \
+	COPYING.LGPL COPYING.GPL CONTRIBUTORS $(pkgconfig_DATA) \
+	$(man_MANS) $(m4_DATA) misc/pep8.py misc/pyflakes.py
 lib_LTLIBRARIES = libgirepository-1.0.la
-noinst_LTLIBRARIES = libcmph.la libgirepository-internals.la \
+noinst_LTLIBRARIES = libgirepository-internals.la \
 	libgirepository-gthash.la libgiscanner.la
 BUILT_SOURCES = scannerparser.c scannerparser.h scannerlexer.c \
 	scannerlexer.h gir/cairo-1.0.gir
-CLEANFILES = $(BUILT_SOURCES) gir/cairo-1.0.gir $(BUILT_GIRSOURCES) \
-	$(typelibs_DATA) g-ir-scanner g-ir-annotation-tool \
-	g-ir-doc-tool $(GENERATED_MSVC_FILES)
+CLEANFILES = $(BUILT_SOURCES) cmph-bdz-test libcmph.la gthash-test \
+	gir/cairo-1.0.gir $(BUILT_GIRSOURCES) $(typelibs_DATA) \
+	g-ir-scanner g-ir-annotation-tool g-ir-doc-tool \
+	$(GENERATED_MSVC_FILES)
 INTROSPECTION_GIRS = $(BUILT_GIRSOURCES)
 check_LTLIBRARIES = 
 bin_SCRIPTS = g-ir-scanner g-ir-annotation-tool $(am__append_5)
-GTESTER_PROGS = cmph-bdz-test gthash-test
+EXTRA_LTLIBRARIES = libcmph.la
 INTROSPECTION_SCANNER = \
     env PATH=.libs:$(PATH) \
         LPATH=.libs \
@@ -934,7 +1114,6 @@ libgirepository_1_0_la_SOURCES = \
 	girepository/gitypeinfo.c			\
 	girepository/gitypelib.c			\
 	girepository/gitypelib-internal.h		\
-	girepository/glib-compat.h			\
 	girepository/giunioninfo.c			\
 	girepository/givfuncinfo.c
 
@@ -958,8 +1137,7 @@ libgiscanner_la_SOURCES = \
 	giscanner/sourcescanner.c				\
 	giscanner/sourcescanner.h				\
 	giscanner/scannerlexer.l				\
-	giscanner/scannerparser.y				\
-	giscanner/grealpath.h
+	giscanner/scannerparser.y
 
 libgiscanner_la_CPPFLAGS = -I$(top_srcdir)/girepository -I$(top_srcdir)/giscanner
 libgiscanner_la_LIBADD = $(GOBJECT_LIBS) $(GIO_LIBS)
@@ -994,6 +1172,7 @@ pkgpyexec_PYTHON = \
 collectionsdir = $(pkgpyexecdir)/collections
 collections_PYTHON = \
 	giscanner/collections/__init__.py	\
+	giscanner/collections/counter.py	\
 	giscanner/collections/ordereddict.py
 
 templatedir = $(pkglibdir)
@@ -1249,7 +1428,7 @@ GENERATED_MSVC_FILES = \
 
 ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
 SUBDIRS = . docs tests build
-DIST_SUBDIRS = m4 $(SUBDIRS)
+DIST_SUBDIRS = $(SUBDIRS)
 DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --enable-doctool
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = gobject-introspection-1.0.pc gobject-introspection-no-export-1.0.pc
@@ -1280,7 +1459,7 @@ all: $(BUILT_SOURCES) config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .c .l .lo .o .obj .y
+.SUFFIXES: .c .l .lo .log .o .obj .test .test$(EXEEXT) .trs .y
 am--refresh: Makefile
 	@:
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(srcdir)/common.mk $(srcdir)/Makefile.introspection $(srcdir)/Makefile-cmph.am $(srcdir)/Makefile-girepository.am $(srcdir)/Makefile-giscanner.am $(srcdir)/Makefile-examples.am $(srcdir)/Makefile-gir.am $(srcdir)/Makefile-tools.am $(srcdir)/Makefile-msvcproj.am $(am__configure_deps)
@@ -2598,6 +2777,176 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 	-rm -f cscope.out cscope.in.out cscope.po.out cscope.files
 
+# Recover from deleted '.trs' file; this should ensure that
+# "rm -f foo.log; make foo.trs" re-run 'foo.test', and re-create
+# both 'foo.log' and 'foo.trs'.  Break the recipe in two subshells
+# to avoid problems with "make -n".
+.log.trs:
+	rm -f $< $@
+	$(MAKE) $(AM_MAKEFLAGS) $<
+
+# Leading 'am--fnord' is there to ensure the list of targets does not
+# expand to empty, as could happen e.g. with make check TESTS=''.
+am--fnord $(TEST_LOGS) $(TEST_LOGS:.log=.trs): $(am__force_recheck)
+am--force-recheck:
+	@:
+
+$(TEST_SUITE_LOG): $(TEST_LOGS)
+	@$(am__set_TESTS_bases); \
+	am__f_ok () { test -f "$$1" && test -r "$$1"; }; \
+	redo_bases=`for i in $$bases; do \
+	              am__f_ok $$i.trs && am__f_ok $$i.log || echo $$i; \
+	            done`; \
+	if test -n "$$redo_bases"; then \
+	  redo_logs=`for i in $$redo_bases; do echo $$i.log; done`; \
+	  redo_results=`for i in $$redo_bases; do echo $$i.trs; done`; \
+	  if $(am__make_dryrun); then :; else \
+	    rm -f $$redo_logs && rm -f $$redo_results || exit 1; \
+	  fi; \
+	fi; \
+	if test -n "$$am__remaking_logs"; then \
+	  echo "fatal: making $(TEST_SUITE_LOG): possible infinite" \
+	       "recursion detected" >&2; \
+	else \
+	  am__remaking_logs=yes $(MAKE) $(AM_MAKEFLAGS) $$redo_logs; \
+	fi; \
+	if $(am__make_dryrun); then :; else \
+	  st=0;  \
+	  errmsg="fatal: making $(TEST_SUITE_LOG): failed to create"; \
+	  for i in $$redo_bases; do \
+	    test -f $$i.trs && test -r $$i.trs \
+	      || { echo "$$errmsg $$i.trs" >&2; st=1; }; \
+	    test -f $$i.log && test -r $$i.log \
+	      || { echo "$$errmsg $$i.log" >&2; st=1; }; \
+	  done; \
+	  test $$st -eq 0 || exit 1; \
+	fi
+	@$(am__sh_e_setup); $(am__tty_colors); $(am__set_TESTS_bases); \
+	ws='[ 	]'; \
+	results=`for b in $$bases; do echo $$b.trs; done`; \
+	test -n "$$results" || results=/dev/null; \
+	all=`  grep "^$$ws*:test-result:"           $$results | wc -l`; \
+	pass=` grep "^$$ws*:test-result:$$ws*PASS"  $$results | wc -l`; \
+	fail=` grep "^$$ws*:test-result:$$ws*FAIL"  $$results | wc -l`; \
+	skip=` grep "^$$ws*:test-result:$$ws*SKIP"  $$results | wc -l`; \
+	xfail=`grep "^$$ws*:test-result:$$ws*XFAIL" $$results | wc -l`; \
+	xpass=`grep "^$$ws*:test-result:$$ws*XPASS" $$results | wc -l`; \
+	error=`grep "^$$ws*:test-result:$$ws*ERROR" $$results | wc -l`; \
+	if test `expr $$fail + $$xpass + $$error` -eq 0; then \
+	  success=true; \
+	else \
+	  success=false; \
+	fi; \
+	br='==================='; br=$$br$$br$$br$$br; \
+	result_count () \
+	{ \
+	    if test x"$$1" = x"--maybe-color"; then \
+	      maybe_colorize=yes; \
+	    elif test x"$$1" = x"--no-color"; then \
+	      maybe_colorize=no; \
+	    else \
+	      echo "$@: invalid 'result_count' usage" >&2; exit 4; \
+	    fi; \
+	    shift; \
+	    desc=$$1 count=$$2; \
+	    if test $$maybe_colorize = yes && test $$count -gt 0; then \
+	      color_start=$$3 color_end=$$std; \
+	    else \
+	      color_start= color_end=; \
+	    fi; \
+	    echo "$${color_start}# $$desc $$count$${color_end}"; \
+	}; \
+	create_testsuite_report () \
+	{ \
+	  result_count $$1 "TOTAL:" $$all   "$$brg"; \
+	  result_count $$1 "PASS: " $$pass  "$$grn"; \
+	  result_count $$1 "SKIP: " $$skip  "$$blu"; \
+	  result_count $$1 "XFAIL:" $$xfail "$$lgn"; \
+	  result_count $$1 "FAIL: " $$fail  "$$red"; \
+	  result_count $$1 "XPASS:" $$xpass "$$red"; \
+	  result_count $$1 "ERROR:" $$error "$$mgn"; \
+	}; \
+	{								\
+	  echo "$(PACKAGE_STRING): $(subdir)/$(TEST_SUITE_LOG)" |	\
+	    $(am__rst_title);						\
+	  create_testsuite_report --no-color;				\
+	  echo;								\
+	  echo ".. contents:: :depth: 2";				\
+	  echo;								\
+	  for b in $$bases; do echo $$b; done				\
+	    | $(am__create_global_log);					\
+	} >$(TEST_SUITE_LOG).tmp || exit 1;				\
+	mv $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);			\
+	if $$success; then						\
+	  col="$$grn";							\
+	 else								\
+	  col="$$red";							\
+	  test x"$$VERBOSE" = x || cat $(TEST_SUITE_LOG);		\
+	fi;								\
+	echo "$${col}$$br$${std}"; 					\
+	echo "$${col}Testsuite summary for $(PACKAGE_STRING)$${std}";	\
+	echo "$${col}$$br$${std}"; 					\
+	create_testsuite_report --maybe-color;				\
+	echo "$$col$$br$$std";						\
+	if $$success; then :; else					\
+	  echo "$${col}See $(subdir)/$(TEST_SUITE_LOG)$${std}";		\
+	  if test -n "$(PACKAGE_BUGREPORT)"; then			\
+	    echo "$${col}Please report to $(PACKAGE_BUGREPORT)$${std}";	\
+	  fi;								\
+	  echo "$$col$$br$$std";					\
+	fi;								\
+	$$success || exit 1
+
+check-TESTS:
+	@list='$(RECHECK_LOGS)';           test -z "$$list" || rm -f $$list
+	@list='$(RECHECK_LOGS:.log=.trs)'; test -z "$$list" || rm -f $$list
+	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
+	@set +e; $(am__set_TESTS_bases); \
+	log_list=`for i in $$bases; do echo $$i.log; done`; \
+	trs_list=`for i in $$bases; do echo $$i.trs; done`; \
+	log_list=`echo $$log_list`; trs_list=`echo $$trs_list`; \
+	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) TEST_LOGS="$$log_list"; \
+	exit $$?;
+recheck: all $(check_LTLIBRARIES) $(check_PROGRAMS)
+	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
+	@set +e; $(am__set_TESTS_bases); \
+	bases=`for i in $$bases; do echo $$i; done \
+	         | $(am__list_recheck_tests)` || exit 1; \
+	log_list=`for i in $$bases; do echo $$i.log; done`; \
+	log_list=`echo $$log_list`; \
+	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) \
+	        am__force_recheck=am--force-recheck \
+	        TEST_LOGS="$$log_list"; \
+	exit $$?
+cmph-bdz-test.log: cmph-bdz-test$(EXEEXT)
+	@p='cmph-bdz-test$(EXEEXT)'; \
+	b='cmph-bdz-test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+gthash-test.log: gthash-test$(EXEEXT)
+	@p='gthash-test$(EXEEXT)'; \
+	b='gthash-test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+.test.log:
+	@p='$<'; \
+	$(am__set_b); \
+	$(am__check_pre) $(TEST_LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_TEST_LOG_DRIVER_FLAGS) $(TEST_LOG_DRIVER_FLAGS) -- $(TEST_LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+@am__EXEEXT_TRUE@.test$(EXEEXT).log:
+@am__EXEEXT_TRUE@	@p='$<'; \
+@am__EXEEXT_TRUE@	$(am__set_b); \
+@am__EXEEXT_TRUE@	$(am__check_pre) $(TEST_LOG_DRIVER) --test-name "$$f" \
+@am__EXEEXT_TRUE@	--log-file $$b.log --trs-file $$b.trs \
+@am__EXEEXT_TRUE@	$(am__common_driver_flags) $(AM_TEST_LOG_DRIVER_FLAGS) $(TEST_LOG_DRIVER_FLAGS) -- $(TEST_LOG_COMPILE) \
+@am__EXEEXT_TRUE@	"$$tst" $(AM_TESTS_FD_REDIRECT)
+
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	test -d "$(distdir)" || mkdir "$(distdir)"
@@ -2780,7 +3129,7 @@ distcleancheck: distclean
 	       exit 1; } >&2
 check-am: all-am
 	$(MAKE) $(AM_MAKEFLAGS) $(check_LTLIBRARIES) $(check_PROGRAMS)
-	$(MAKE) $(AM_MAKEFLAGS) check-local
+	$(MAKE) $(AM_MAKEFLAGS) check-TESTS check-local
 check: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) check-recursive
 all-am: Makefile $(LTLIBRARIES) $(PROGRAMS) $(SCRIPTS) $(MANS) $(DATA) \
@@ -2813,6 +3162,9 @@ install-strip:
 	    "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'" install; \
 	fi
 mostlyclean-generic:
+	-test -z "$(TEST_LOGS)" || rm -f $(TEST_LOGS)
+	-test -z "$(TEST_LOGS:.log=.trs)" || rm -f $(TEST_LOGS:.log=.trs)
+	-test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
 
 clean-generic:
 	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
@@ -2921,9 +3273,9 @@ uninstall-man: uninstall-man1
 	install-strip
 
 .PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am \
-	am--refresh check check-am check-local clean clean-binPROGRAMS \
-	clean-checkLTLIBRARIES clean-checkPROGRAMS clean-cscope \
-	clean-generic clean-libLTLIBRARIES clean-libtool \
+	am--refresh check check-TESTS check-am check-local clean \
+	clean-binPROGRAMS clean-checkLTLIBRARIES clean-checkPROGRAMS \
+	clean-cscope clean-generic clean-libLTLIBRARIES clean-libtool \
 	clean-noinstLTLIBRARIES clean-noinstPROGRAMS \
 	clean-pkgpyexecLTLIBRARIES cscope cscopelist-am ctags ctags-am \
 	dist dist-all dist-bzip2 dist-gzip dist-lzip dist-shar \
@@ -2944,14 +3296,15 @@ uninstall-man: uninstall-man1
 	install-typelibsDATA installcheck installcheck-am installdirs \
 	installdirs-am maintainer-clean maintainer-clean-generic \
 	mostlyclean mostlyclean-compile mostlyclean-generic \
-	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am uninstall-binPROGRAMS uninstall-binSCRIPTS \
-	uninstall-collectionsPYTHON uninstall-dist_makeDATA \
-	uninstall-gdumpDATA uninstall-girDATA uninstall-girepoHEADERS \
-	uninstall-libLTLIBRARIES uninstall-m4DATA uninstall-man \
-	uninstall-man1 uninstall-nobase_dist_templateDATA \
-	uninstall-pkgconfigDATA uninstall-pkgpyexecLTLIBRARIES \
-	uninstall-pkgpyexecPYTHON uninstall-typelibsDATA
+	mostlyclean-libtool pdf pdf-am ps ps-am recheck tags tags-am \
+	uninstall uninstall-am uninstall-binPROGRAMS \
+	uninstall-binSCRIPTS uninstall-collectionsPYTHON \
+	uninstall-dist_makeDATA uninstall-gdumpDATA uninstall-girDATA \
+	uninstall-girepoHEADERS uninstall-libLTLIBRARIES \
+	uninstall-m4DATA uninstall-man uninstall-man1 \
+	uninstall-nobase_dist_templateDATA uninstall-pkgconfigDATA \
+	uninstall-pkgpyexecLTLIBRARIES uninstall-pkgpyexecPYTHON \
+	uninstall-typelibsDATA
 
 
 # Make sure the required variables are set, these should under normal
@@ -3093,7 +3446,7 @@ g-ir-doc-tool: tools/g-ir-doc-tool.in _giscanner.la Makefile
 # cmph (static lib) projects
 # --------------------------
 ./build/win32/vs9/cmph.vcproj: $(top_srcdir)/build/win32/vs9/cmph.vcprojin
-	for F in `echo $(libcmph_la_SOURCES) | tr '/' '\\'`; do \
+	for F in `echo $(libcmph_la_SOURCES) | tr '/' '\\\\'`; do \
 		case $$F in \
 		*.c)	echo '   <File RelativePath="..\..\..\'$$F'" />' \
 			;; \
@@ -3103,7 +3456,7 @@ g-ir-doc-tool: tools/g-ir-doc-tool.in _giscanner.la Makefile
 	rm cmph.sourcefiles
 
 ./build/win32/vs10/cmph.vcxproj: $(top_srcdir)/build/win32/vs10/cmph.vcxprojin
-	for F in `echo $(libcmph_la_SOURCES) | tr '/' '\\'`; do \
+	for F in `echo $(libcmph_la_SOURCES) | tr '/' '\\\\'`; do \
 		case $$F in \
 		*.c)	echo '    <ClCompile Include="..\..\..\'$$F'" />' \
 			;; \
@@ -3113,7 +3466,7 @@ g-ir-doc-tool: tools/g-ir-doc-tool.in _giscanner.la Makefile
 	rm cmph.vs10.sourcefiles
 
 ./build/win32/vs10/cmph.vcxproj.filters: $(top_srcdir)/build/win32/vs10/cmph.vcxproj.filtersin
-	for F in `echo $(libcmph_la_SOURCES) | tr '/' '\\'`; do \
+	for F in `echo $(libcmph_la_SOURCES) | tr '/' '\\\\'`; do \
 		case $$F in \
 		*.c)	echo '    <ClCompile Include="..\..\..\'$$F'"><Filter>Sources</Filter></ClCompile>' \
 			;; \
@@ -3126,7 +3479,7 @@ g-ir-doc-tool: tools/g-ir-doc-tool.in _giscanner.la Makefile
 # girepository DLL projects
 # -------------------------
 ./build/win32/vs9/girepository.vcproj: $(top_srcdir)/build/win32/vs9/girepository.vcprojin ./build/win32/vs9/gir.vs9.install
-	for F in `echo $(libgirepository_1_0_la_SOURCES) $(libgirepository_gthash_la_SOURCES) | tr '/' '\\'`; do \
+	for F in `echo $(libgirepository_1_0_la_SOURCES) $(libgirepository_gthash_la_SOURCES) | tr '/' '\\\\'`; do \
 		case $$F in \
 		*.c)	echo '   <File RelativePath="..\..\..\'$$F'" />' \
 			;; \
@@ -3136,7 +3489,7 @@ g-ir-doc-tool: tools/g-ir-doc-tool.in _giscanner.la Makefile
 	rm girepository.sourcefiles
 
 ./build/win32/vs10/girepository.vcxproj: $(top_srcdir)/build/win32/vs10/girepository.vcxprojin ./build/win32/vs10/gir.vs10.install
-	for F in `echo $(libgirepository_1_0_la_SOURCES) $(libgirepository_gthash_la_SOURCES) | tr '/' '\\'`; do \
+	for F in `echo $(libgirepository_1_0_la_SOURCES) $(libgirepository_gthash_la_SOURCES) | tr '/' '\\\\'`; do \
 		case $$F in \
 		*.c)	echo '    <ClCompile Include="..\..\..\'$$F'" />' \
 			;; \
@@ -3146,7 +3499,7 @@ g-ir-doc-tool: tools/g-ir-doc-tool.in _giscanner.la Makefile
 	rm girepository.vs10.sourcefiles
 
 ./build/win32/vs10/girepository.vcxproj.filters: $(top_srcdir)/build/win32/vs10/girepository.vcxproj.filtersin
-	for F in `echo $(libgirepository_1_0_la_SOURCES) $(libgirepository_gthash_la_SOURCES) | tr '/' '\\'`; do \
+	for F in `echo $(libgirepository_1_0_la_SOURCES) $(libgirepository_gthash_la_SOURCES) | tr '/' '\\\\'`; do \
 		case $$F in \
 		*.c)	echo '    <ClCompile Include="..\..\..\'$$F'"><Filter>Sources</Filter></ClCompile>' \
 			;; \
@@ -3164,7 +3517,7 @@ g-ir-doc-tool: tools/g-ir-doc-tool.in _giscanner.la Makefile
 # here)
 # ------------------------------------
 ./build/win32/vs9/g-ir-compiler.vcproj: $(top_srcdir)/build/win32/vs9/g-ir-compiler.vcprojin
-	for F in `echo $(libgirepository_gthash_la_SOURCES) $(libgirepository_internals_la_SOURCES) | tr '/' '\\'`; do \
+	for F in `echo $(libgirepository_gthash_la_SOURCES) $(libgirepository_internals_la_SOURCES) | tr '/' '\\\\'`; do \
 		case $$F in \
 		*.c)	echo '   <File RelativePath="..\..\..\'$$F'" />' \
 			;; \
@@ -3174,7 +3527,7 @@ g-ir-doc-tool: tools/g-ir-doc-tool.in _giscanner.la Makefile
 	rm g-ir-compiler.sourcefiles
 
 ./build/win32/vs10/g-ir-compiler.vcxproj: $(top_srcdir)/build/win32/vs10/g-ir-compiler.vcxprojin
-	for F in `echo $(libgirepository_gthash_la_SOURCES) $(libgirepository_internals_la_SOURCES) | tr '/' '\\'`; do \
+	for F in `echo $(libgirepository_gthash_la_SOURCES) $(libgirepository_internals_la_SOURCES) | tr '/' '\\\\'`; do \
 		case $$F in \
 		*.c)	echo '    <ClCompile Include="..\..\..\'$$F'" />' \
 			;; \
@@ -3184,7 +3537,7 @@ g-ir-doc-tool: tools/g-ir-doc-tool.in _giscanner.la Makefile
 	rm g-ir-compiler.vs10.sourcefiles
 
 ./build/win32/vs10/g-ir-compiler.vcxproj.filters: $(top_srcdir)/build/win32/vs10/g-ir-compiler.vcxproj.filtersin
-	for F in `echo $(libgirepository_gthash_la_SOURCES) $(libgirepository_internals_la_SOURCES) | tr '/' '\\'`; do \
+	for F in `echo $(libgirepository_gthash_la_SOURCES) $(libgirepository_internals_la_SOURCES) | tr '/' '\\\\'`; do \
 		case $$F in \
 		*.c)	echo '    <ClCompile Include="..\..\..\'$$F'"><Filter>Sources</Filter></ClCompile>' \
 			;; \
@@ -3198,11 +3551,11 @@ g-ir-doc-tool: tools/g-ir-doc-tool.in _giscanner.la Makefile
 # and Python scripts to install
 #--------------------------------
 ./build/win32/vs9/gir.vs9.install:
-	echo 'mkdir $$(CopyDir)\include\gobject-introspection-$$(GIApiVersion)\girepository&#x0D;&#x0A;' >./build/win32/vs9/gir.vs9.install
+	echo 'mkdir $$(CopyDir)\include\gobject-introspection-$$(ApiVersion)\girepository&#x0D;&#x0A;' >./build/win32/vs9/gir.vs9.install
 	echo '' >>./build/win32/vs9/gir.vs9.install
-	for F in `echo $(girepo_HEADERS) | tr '/' '\\'`; do \
+	for F in `echo $(girepo_HEADERS) | tr '/' '\\\\'`; do \
 		case $$F in \
-		*.h) echo 'copy ..\..\..\'$$F' $$(CopyDir)\include\gobject-introspection-$$(GIApiVersion)\girepository&#x0D;&#x0A;' \
+		*.h) echo 'copy ..\..\..\'$$F' $$(CopyDir)\include\gobject-introspection-$$(ApiVersion)\girepository&#x0D;&#x0A;' \
 			;; \
 		esac; \
 	done >>./build/win32/vs9/gir.vs9.install
@@ -3214,7 +3567,7 @@ g-ir-doc-tool: tools/g-ir-doc-tool.in _giscanner.la Makefile
 	echo 'mkdir $$(CopyDir)\lib\gobject-introspection\giscanner\doctemplates\Gjs&#x0D;&#x0A;' >>./build/win32/vs9/gir.vs9.install
 	echo 'mkdir $$(CopyDir)\lib\gobject-introspection\giscanner\doctemplates\Python&#x0D;&#x0A;' >>./build/win32/vs9/gir.vs9.install
 	echo '' >>./build/win32/vs9/gir.vs9.install
-	for F in `echo $(pkgpyexec_PYTHON) $(collections_PYTHON) $(nobase_dist_template_DATA) | tr '/' '\\'`; do \
+	for F in `echo $(pkgpyexec_PYTHON) $(collections_PYTHON) $(nobase_dist_template_DATA) | tr '/' '\\\\'`; do \
 		case $$F in \
 		giscanner\\doctemplates\\C\\*.tmpl) echo 'copy ..\..\..\'$$F' $$(CopyDir)\lib\gobject-introspection\giscanner\doctemplates\C&#x0D;&#x0A;' \
 			;; \
@@ -3232,11 +3585,11 @@ g-ir-doc-tool: tools/g-ir-doc-tool.in _giscanner.la Makefile
 	done >>./build/win32/vs9/gir.vs9.install
 
 ./build/win32/vs10/gir.vs10.install:
-	echo 'mkdir $$(CopyDir)\include\gobject-introspection-$$(GIApiVersion)\girepository' >./build/win32/vs10/gir.vs10.install
+	echo 'mkdir $$(CopyDir)\include\gobject-introspection-$$(ApiVersion)\girepository' >./build/win32/vs10/gir.vs10.install
 	echo '' >>./build/win32/vs10/gir.vs10.install
-	for F in `echo $(girepo_HEADERS) | tr '/' '\\'`; do \
+	for F in `echo $(girepo_HEADERS) | tr '/' '\\\\'`; do \
 		case $$F in \
-		*.h) echo 'copy ..\..\..\'$$F' $$(CopyDir)\include\gobject-introspection-$$(GIApiVersion)\girepository' && \
+		*.h) echo 'copy ..\..\..\'$$F' $$(CopyDir)\include\gobject-introspection-$$(ApiVersion)\girepository' && \
 			echo '' \
 			;; \
 		esac; \
@@ -3248,7 +3601,7 @@ g-ir-doc-tool: tools/g-ir-doc-tool.in _giscanner.la Makefile
 	echo 'mkdir $$(CopyDir)\lib\gobject-introspection\giscanner\doctemplates\Gjs' >>./build/win32/vs10/gir.vs10.install
 	echo 'mkdir $$(CopyDir)\lib\gobject-introspection\giscanner\doctemplates\Python' >>./build/win32/vs10/gir.vs10.install
 	echo '' >>./build/win32/vs10/gir.vs10.install
-	for F in `echo $(pkgpyexec_PYTHON) $(collections_PYTHON) $(nobase_dist_template_DATA) | tr '/' '\\'`; do \
+	for F in `echo $(pkgpyexec_PYTHON) $(collections_PYTHON) $(nobase_dist_template_DATA) | tr '/' '\\\\'`; do \
 		case $$F in \
 		giscanner\\doctemplates\\C\\*.tmpl) echo 'copy ..\..\..\'$$F' $$(CopyDir)\lib\gobject-introspection\giscanner\doctemplates\C' \
 			;; \
@@ -3266,25 +3619,20 @@ g-ir-doc-tool: tools/g-ir-doc-tool.in _giscanner.la Makefile
 		esac; \
 	done >>./build/win32/vs10/gir.vs10.install
 
-./build/win32/vs9/gir.vsprops: ./build/win32/vs9/gir.vs9.install $(top_srcdir)/build/win32/vs9/gir.vspropsin
-	$(CPP) -P - <$(top_srcdir)/build/win32/vs9/gir.vspropsin >$@
+./build/win32/vs9/gi-install.vsprops: ./build/win32/vs9/gir.vs9.install $(top_srcdir)/build/win32/vs9/gi-install.vspropsin
+	$(CPP) -P - <$(top_srcdir)/build/win32/vs9/gi-install.vspropsin >$@
 	rm ./build/win32/vs9/gir.vs9.install
 
-./build/win32/vs10/gir.props: ./build/win32/vs10/gir.vs10.install $(top_srcdir)/build/win32/vs10/gir.propsin
-	$(CPP) -P - <$(top_srcdir)/build/win32/vs10/gir.propsin >$@
+./build/win32/vs10/gi-install.props: ./build/win32/vs10/gir.vs10.install $(top_srcdir)/build/win32/vs10/gi-install.propsin
+	$(CPP) -P - <$(top_srcdir)/build/win32/vs10/gi-install.propsin >$@
 	rm ./build/win32/vs10/gir.vs10.install
 
 check-local:
-	gtester --verbose $(GTESTER_PROGS)
 	@echo "TEST: PEP-8 INQUISITION"
 	@find $(top_srcdir)/giscanner -name \*.py | sort | uniq | xargs \
 		$(PYTHON) $(top_srcdir)/misc/pep8.py --max-line-length=99 --ignore=E128 $(PEP8_EXCLUDES)
 	@find $(top_srcdir)/tests -name \*.py | sort | uniq | xargs \
 		$(PYTHON) $(top_srcdir)/misc/pep8.py --ignore=E127,E501 $(PEP8_EXCLUDES)
-	@echo "TEST: Annotation pattern programs"
-	PYTHONPATH="$(top_builddir):$(top_srcdir)" $(PYTHON) $(top_srcdir)/tests/scanner/annotationparser/test_patterns.py
-	@echo "TEST: GTK-Doc Annotation Parser"
-	PYTHONPATH="$(top_builddir):$(top_srcdir)" $(PYTHON) $(top_srcdir)/tests/scanner/annotationparser/test_parser.py
 
 check-pyflakes:
 	@echo "  CHECK Pyflakes"

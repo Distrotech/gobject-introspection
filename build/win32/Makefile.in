@@ -221,6 +221,7 @@ GIREPO_CFLAGS = @GIREPO_CFLAGS@
 GIREPO_LIBS = @GIREPO_LIBS@
 GIR_DIR = @GIR_DIR@
 GIR_SUFFIX = @GIR_SUFFIX@
+GI_VERSION = @GI_VERSION@
 GLIBSRC = @GLIBSRC@
 GLIB_CFLAGS = @GLIB_CFLAGS@
 GLIB_LIBS = @GLIB_LIBS@
@@ -351,8 +352,6 @@ EXTRA_DIST = \
 	annotation.def	\
 	everything.def	\
 	foo.def	\
-	gengir.bat	\
-	create_nonglib_gir.py	\
 	gettype.def	\
 	gimarshallingtests.def	\
 	gtkfrob.def	\
