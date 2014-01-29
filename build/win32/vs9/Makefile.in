@@ -161,6 +161,7 @@ GIREPO_CFLAGS = @GIREPO_CFLAGS@
 GIREPO_LIBS = @GIREPO_LIBS@
 GIR_DIR = @GIR_DIR@
 GIR_SUFFIX = @GIR_SUFFIX@
+GI_VERSION = @GI_VERSION@
 GLIBSRC = @GLIBSRC@
 GLIB_CFLAGS = @GLIB_CFLAGS@
 GLIB_LIBS = @GLIB_LIBS@
@@ -288,17 +289,20 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 EXTRA_DIST = \
 	gobject-introspection.sln	\
+	gi-build-defines.vsprops	\
+	gi-extra-paths.vsprops	\
+	gi-gen-srcs.vsprops	\
+	gi-install.vspropsin	\
+	gi-install.vsprops	\
+	gi-version-paths.vsprops	\
+	gi-prebuild.vcproj	\
 	girepository.vcprojin	\
-	gir.vspropsin	\
-	gir.vsprops	\
 	annotation.vcproj	\
 	cmph-bdz-test.vcproj	\
 	cmph.vcprojin	\
-	everything.vcproj	\
 	foo.vcproj	\
 	g-ir-compiler.vcprojin	\
 	g-ir-generate.vcproj	\
-	generate_typelibs.vcproj	\
 	gettype.vcproj	\
 	gimarshallingtests.vcproj	\
 	glib-print.vcproj	\
@@ -311,7 +315,7 @@ EXTRA_DIST = \
 	_giscanner.vcproj	\
 	README.txt
 
-CLEANFILES = gir.vsprops
+CLEANFILES = gi-install.vsprops
 all: all-am
 
 .SUFFIXES:
@@ -504,8 +508,8 @@ uninstall-am:
 	tags-am uninstall uninstall-am
 
 
-gir.vsprops: $(top_srcdir)/build/win32/vs9/gir.vspropsin gir.vs9.install
-	$(CPP) -P - <$(top_srcdir)/build/win32/vs9/gir.vspropsin >$@
+gi-install.vsprops: $(top_srcdir)/build/win32/vs9/gi-install.vspropsin gir.vs9.install
+	$(CPP) -P - <$(top_srcdir)/build/win32/vs9/gi-install.vspropsin >$@
 	rm gir.vs9.install
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

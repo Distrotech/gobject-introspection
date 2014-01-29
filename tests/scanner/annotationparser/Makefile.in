@@ -86,8 +86,9 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 DIST_COMMON = $(top_srcdir)/common.mk $(srcdir)/Makefile.in \
-	$(srcdir)/Makefile.am $(top_srcdir)/build-aux/test-driver
-subdir = tests/warn
+	$(srcdir)/Makefile.am $(top_srcdir)/build-aux/test-driver \
+	README
+subdir = tests/scanner/annotationparser
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/gtk-doc.m4 \
 	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
@@ -542,26 +543,72 @@ INTROSPECTION_DOCTOOL_ARGS = \
     --add-include-path=$(top_builddir)
 
 TESTS = \
-	annotationparser.h \
-	callback-invalid-scope.h \
-	callback-missing-scope.h \
-	invalid-array.h \
-	invalid-closure.h \
-	invalid-constructor.h \
-	invalid-element-type.h \
-	invalid-method.h \
-	invalid-option.h \
-	invalid-out.h \
-	invalid-transfer.h \
-	missing-element-type.h \
-	return-gobject.h \
-	unknown-parameter.h \
-	unresolved-type.h
+	test_parser.py \
+	test_patterns.py
 
-LOG_COMPILER = env PYTHONPATH=$(top_builddir):$(top_srcdir) TOP_BUILDDIR=$(top_builddir) UNINSTALLED_INTROSPECTION_SRCDIR=$(top_srcdir) \
-	$(PYTHON) $(srcdir)/warningtester.py
+TESTS_ENVIRONMENT = builddir=$(builddir) top_builddir=$(top_builddir) srcdir=$(srcdir) top_srcdir=$(top_srcdir) \
+	PYTHON=$(PYTHON) UNINSTALLED_INTROSPECTION_SRCDIR=$(top_srcdir)
 
-EXTRA_DIST = warningtester.py common.h $(TESTS)
+LOG_COMPILER = $(top_srcdir)/tests/gi-tester
+EXTRA_DIST = \
+	$(TESTS)				\
+	README					\
+	tests.xsd				\
+	gi/annotation_allow_none.xml		\
+	gi/annotation_array.xml		\
+	gi/annotation_attributes.xml		\
+	gi/annotation_closure.xml		\
+	gi/annotation_constructor.xml		\
+	gi/annotation_destroy.xml		\
+	gi/annotation_element_type.xml		\
+	gi/annotation_foreign.xml		\
+	gi/annotation_get_value_func.xml	\
+	gi/annotation_in.xml			\
+	gi/annotation_in_out.xml		\
+	gi/annotation_method.xml		\
+	gi/annotation_out.xml			\
+	gi/annotation_ref_func.xml		\
+	gi/annotation_rename_to.xml		\
+	gi/annotation_scope.xml		\
+	gi/annotation_set_value_func.xml	\
+	gi/annotation_skip.xml			\
+	gi/annotation_transfer.xml		\
+	gi/annotation_type.xml			\
+	gi/annotation_unref_func.xml		\
+	gi/annotation_value.xml		\
+	gi/annotation_virtual.xml		\
+	gi/annotations.xml			\
+	gi/identifier.xml			\
+	gi/identifier_section.xml		\
+	gi/identifier_symbol.xml		\
+	gi/parameter.xml			\
+	gi/parameter_varargs.xml		\
+	gi/syntax.xml				\
+	gi/syntax_indentation.xml		\
+	gi/syntax_multiline_annotations.xml	\
+	gi/syntax_nested_tags.xml		\
+	gi/syntax_paragraph_breaks.xml		\
+	gi/syntax_whitespace.xml		\
+	gi/tag.xml				\
+	gi/tag_deprecated.xml			\
+	gi/tag_description.xml			\
+	gi/tag_returns.xml			\
+	gi/tag_since.xml			\
+	gi/tag_stability.xml			\
+	gtkdoc/gobject/gtypes.h.xml		\
+	gtkdoc/gobject/gtypes.c.xml		\
+	gtkdoc/gobject/giface.h.xml		\
+	gtkdoc/gobject/giface.c.xml		\
+	gtkdoc/fail/tester.h.xml		\
+	gtkdoc/fail/tester.c.xml		\
+	gtkdoc/empty/tester.c.xml		\
+	gtkdoc/bugs/tester.h.xml		\
+	gtkdoc/bugs/tester.c.xml		\
+	gtkdoc/annotations/tester.h.xml	\
+	gtkdoc/annotations/tester.c.xml	\
+	gtkdoc/gobject/gobject.h.xml		\
+	gtkdoc/gobject/gobject.c.xml
+
 all: all-am
 
 .SUFFIXES:
@@ -575,9 +622,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign tests/warn/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign tests/scanner/annotationparser/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign tests/warn/Makefile
+	  $(AUTOMAKE) --foreign tests/scanner/annotationparser/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -751,107 +798,16 @@ recheck: all
 	        am__force_recheck=am--force-recheck \
 	        TEST_LOGS="$$log_list"; \
 	exit $$?
-annotationparser.h.log: annotationparser.h
-	@p='annotationparser.h'; \
-	b='annotationparser.h'; \
+test_parser.py.log: test_parser.py
+	@p='test_parser.py'; \
+	b='test_parser.py'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-callback-invalid-scope.h.log: callback-invalid-scope.h
-	@p='callback-invalid-scope.h'; \
-	b='callback-invalid-scope.h'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-callback-missing-scope.h.log: callback-missing-scope.h
-	@p='callback-missing-scope.h'; \
-	b='callback-missing-scope.h'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-invalid-array.h.log: invalid-array.h
-	@p='invalid-array.h'; \
-	b='invalid-array.h'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-invalid-closure.h.log: invalid-closure.h
-	@p='invalid-closure.h'; \
-	b='invalid-closure.h'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-invalid-constructor.h.log: invalid-constructor.h
-	@p='invalid-constructor.h'; \
-	b='invalid-constructor.h'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-invalid-element-type.h.log: invalid-element-type.h
-	@p='invalid-element-type.h'; \
-	b='invalid-element-type.h'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-invalid-method.h.log: invalid-method.h
-	@p='invalid-method.h'; \
-	b='invalid-method.h'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-invalid-option.h.log: invalid-option.h
-	@p='invalid-option.h'; \
-	b='invalid-option.h'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-invalid-out.h.log: invalid-out.h
-	@p='invalid-out.h'; \
-	b='invalid-out.h'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-invalid-transfer.h.log: invalid-transfer.h
-	@p='invalid-transfer.h'; \
-	b='invalid-transfer.h'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-missing-element-type.h.log: missing-element-type.h
-	@p='missing-element-type.h'; \
-	b='missing-element-type.h'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-return-gobject.h.log: return-gobject.h
-	@p='return-gobject.h'; \
-	b='return-gobject.h'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-unknown-parameter.h.log: unknown-parameter.h
-	@p='unknown-parameter.h'; \
-	b='unknown-parameter.h'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-unresolved-type.h.log: unresolved-type.h
-	@p='unresolved-type.h'; \
-	b='unresolved-type.h'; \
+test_patterns.py.log: test_patterns.py
+	@p='test_patterns.py'; \
+	b='test_patterns.py'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
