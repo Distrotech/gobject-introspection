@@ -221,6 +221,7 @@ GIREPO_CFLAGS = @GIREPO_CFLAGS@
 GIREPO_LIBS = @GIREPO_LIBS@
 GIR_DIR = @GIR_DIR@
 GIR_SUFFIX = @GIR_SUFFIX@
+GI_VERSION = @GI_VERSION@
 GLIBSRC = @GLIBSRC@
 GLIB_CFLAGS = @GLIB_CFLAGS@
 GLIB_LIBS = @GLIB_LIBS@
@@ -347,6 +348,12 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = win32
+EXTRA_DIST = \
+	detectenv_msvc.mak	\
+	gen-cairo-gir.py	\
+	gi-introspection-msvc.mak	\
+	introspection-msvc.mak
+
 all: all-recursive
 
 .SUFFIXES:
