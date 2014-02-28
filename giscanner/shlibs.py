@@ -201,11 +201,6 @@ def _resolve_non_libtool(options, binary, libraries):
                     shlibs.append(m.group(1))
                     break
 
-        if len(patterns) > 0:
-            raise SystemExit(
-                "ERROR: can't resolve libraries to shared libraries: " +
-                ", ".join(patterns.keys()))
-
     return shlibs
 
 
